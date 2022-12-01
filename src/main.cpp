@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "ScallerCom/ScallerCom.h"
+#include <ScallerCom.h>
 
 ScallerCom scallercom;
 
