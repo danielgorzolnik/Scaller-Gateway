@@ -7,7 +7,16 @@ enum work_modes{
   mode_normal,
 };
 
+struct Slave {
+  bool active = false;
+  ACK_DATA ack_data;
+};
+
+//ScallerCom
 ScallerCom scallercom;
+
+//SlaveList
+Slave slave_list[MAX_SLAVE_COUNT];
 
 //module main
 bool actual_work_mode = mode_boot;
@@ -37,11 +46,26 @@ void sendFrame(scaller_frame *Scaller_Frame){
   }
 }
 
+void structToFrame(scaller_frame *Scaller_Frame, uint8_t* struct_ptr, uint8_t struct_size, uint8_t data_offset = 0){
+    for (byte i= 0; i < struct_size; i++){
+        Scaller_Frame->data[i + data_offset] = *struct_ptr++;
+    }
+    Scaller_Frame->data_size = Scaller_Frame->data_size + struct_size;
+}
+
+void frameToStruct(scaller_frame *Scaller_Frame, uint8_t* struct_ptr, uint8_t struct_size){
+    for (byte i= 0; i < struct_size; i++){
+        *struct_ptr = Scaller_Frame->data[i];
+        struct_ptr++;
+    }
+}
+
 void scallercomCallback(scaller_frame *Scaller_Frame){
   //received function is equal to expected
   if (Scaller_Frame->address == waiting_address && Scaller_Frame->function == waiting_function){
     if (Scaller_Frame->function == FUNCTION_ACK){
-      
+      slave_list[Scaller_Frame->address - 1].active = true;
+      frameToStruct(Scaller_Frame, (uint8_t*) &slave_list[Scaller_Frame->address - 1].ack_data, sizeof(ACK_DATA));
     }
   }
   flag_wait_for_response = false; 
