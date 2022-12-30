@@ -2,8 +2,6 @@
 #include <ScallerCom.h>
 #include "config.h"
 
-#define MAX_SLAVE_COUNT 16
-
 enum work_modes{
   mode_boot,
   mode_normal,
@@ -18,8 +16,11 @@ bool actual_work_mode = mode_boot;
 byte boot_actual_slave = 0;
 
 //comminication
-bool wait_for_response = false;
-bool response_timeout = false;
+bool flag_wait_for_response = false;
+bool flag_response_timeout = false;
+byte counter_response_timer = 0;
+byte waiting_address = 0;
+uint16_t waiting_function = 0;
 
 //100ms tick
 bool flag_100ms = false;
@@ -28,14 +29,23 @@ byte counter_100ms = 0;
 void sendFrame(scaller_frame *Scaller_Frame){
   scallercom.send(Scaller_Frame);
   if (Scaller_Frame->function != FUNCTION_UC_RESET){
-    wait_for_response = true;
-    response_timeout = false;
+    flag_wait_for_response = true;
+    flag_response_timeout = false;
+    waiting_address = Scaller_Frame->address;
+    waiting_function = Scaller_Frame->function;
+    counter_response_timer = 0;
   }
 }
 
 void scallercomCallback(scaller_frame *Scaller_Frame){
- wait_for_response = false; 
- response_timeout = false;
+  //received function is equal to expected
+  if (Scaller_Frame->address == waiting_address && Scaller_Frame->function == waiting_function){
+    if (Scaller_Frame->function == FUNCTION_ACK){
+      
+    }
+  }
+  flag_wait_for_response = false; 
+  flag_response_timeout = false;
 }
 
 void work_cycle(){
@@ -46,12 +56,13 @@ void work_cycle(){
       actual_work_mode = mode_normal;
     }
 
-    else if (!wait_for_response){
+    else if (!flag_wait_for_response){
       scaller_frame ack_frame;
       ack_frame.address = boot_actual_slave + 1;
       ack_frame.function = FUNCTION_ACK;
       ack_frame.data_size = 0;
       sendFrame(&ack_frame);
+      boot_actual_slave++;
     }
   }
 
@@ -93,13 +104,24 @@ void loop() {
     #endif
     flag_100ms = false;
   }
-  if (wait_for_response){
+  if (flag_wait_for_response){
     scallercom.scallercom_read();
   }
 }
 
 //10ms tick
 ISR(TIMER0_COMPA_vect){
+  //forocom timeout
+  if (flag_wait_for_response){
+    counter_response_timer++;
+    if (counter_response_timer > SCALLERCOM_TIMEOUT){
+      flag_response_timeout = true;
+      flag_wait_for_response = false;
+      counter_response_timer = 0;
+    }
+  }
+
+  //100ms flag
   if (counter_100ms >= 10){
     flag_100ms = true;
     counter_100ms = 0;
