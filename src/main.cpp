@@ -78,6 +78,14 @@ void work_cycle(){
     //exit boot mode
     if (boot_actual_slave >= MAX_SLAVE_COUNT){
       actual_work_mode = mode_normal;
+      
+      //DEBUG
+      for (byte i=0; i<MAX_SLAVE_COUNT; i++){
+        Serial.print("Slave: ");
+        Serial.print(i+1);
+        Serial.print(" active=");
+        Serial.println(slave_list[i].active);
+      }
     }
 
     else if (!flag_wait_for_response){
@@ -106,6 +114,7 @@ void setup() {
   TCCR0A |= ((1 << WGM00) | (1 << WGM01));
   TCCR0B |= ((1 << CS00) | (1 << CS02));
   TIMSK0 |= (1 << OCIE0A);
+  sei();
 
   #if defined(ENABLE_LED_ACK)
     pinMode(pin_led_ack, OUTPUT);
@@ -117,6 +126,8 @@ void setup() {
   #if defined(ENABLE_SCALLER_RS485)
     scallercom.set485pin(pin_rs_dir);
   #endif
+
+  Serial.begin(115200);
 }
 
 void loop() {
