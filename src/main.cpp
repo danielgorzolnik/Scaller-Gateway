@@ -1,6 +1,6 @@
+#include "config.h"
 #include <Arduino.h>
 #include <ScallerCom.h>
-#include "config.h"
 
 enum work_modes{
   mode_boot,
@@ -127,7 +127,7 @@ void setup() {
     scallercom.set485pin(pin_rs_dir);
   #endif
 
-  Serial.begin(115200);
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -135,7 +135,7 @@ void loop() {
   work_cycle();
   if (flag_100ms){
     #if defined(ENABLE_LED_ACK)
-      pinMode(pin_led_ack, !digitalRead(pin_led_ack));
+      digitalWrite(pin_led_ack, !digitalRead(pin_led_ack));
     #endif
     flag_100ms = false;
   }
@@ -155,7 +155,6 @@ ISR(TIMER0_COMPA_vect){
       counter_response_timer = 0;
     }
   }
-
   //100ms flag
   if (counter_100ms >= 10){
     flag_100ms = true;
