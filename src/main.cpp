@@ -118,14 +118,16 @@ void work_cycle(){
       if (ack_actual_slave >= MAX_SLAVE_COUNT){
         ack_actual_slave = 0;
       }
-      if (slave_list[ack_actual_slave].active){
-        scaller_frame ack_frame;
-        ack_frame.address = boot_actual_slave + 1;
-        ack_frame.function = FUNCTION_ACK;
-        ack_frame.data_size = 0;
-        sendFrame(&ack_frame);
-      }
+      if (!flag_wait_for_response ){
+        if (slave_list[ack_actual_slave].active){
+          scaller_frame ack_frame;
+          ack_frame.address = boot_actual_slave + 1;
+          ack_frame.function = FUNCTION_ACK;
+          ack_frame.data_size = 0;
+          sendFrame(&ack_frame);
+        }
       ack_actual_slave++;
+      } 
     }
   }
 }
